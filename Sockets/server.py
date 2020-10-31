@@ -2,22 +2,19 @@ import socket
 import os
 from datetime import datetime
 
-
-
 LOG_FILE = 'server-log.log'
 WHO_COMMAND = 'Who'
 WHO_STR = 'Станіслав Безкоровайний, К-27. Віддалена консоль.\n'
 EXIT_MARKER = '\nexit\n'
 EXIT_MARKER_LEN = len(EXIT_MARKER)
+PORT = 1025 + 3
 
 s = socket.socket()          
 print ("Socket successfully created")
-   
-port = 1025 + 3               
-s.bind(('', port))         
 
-print ("socket binded to %s", port)
-  
+s.bind(('', PORT))         
+print ("socket binded to %s", PORT)
+
 s.listen(5)      
 print("socket is listening") 
 

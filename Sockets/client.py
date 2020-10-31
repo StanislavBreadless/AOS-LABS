@@ -66,22 +66,6 @@ def get_commands_from_prompt():
   
   return commands
 
-# def chunks(lst, n):
-#   for i in range(0, len(lst), n):
-#     if i + n >= len(lst):
-#       yield[i:len(lst)]
-#     else:
-#       yield lst[i:i + n]  
-
-# def send_bytes(socket, bytes):
-#   for chunk in chunks(bytes, 255):
-#     length = len(chunk)
-#     socket.sendall([length.to_bytes(1, 'big')] + chunk)
-#   socket.sendall((0).to_bytes(1, 'big'))
-
-# def receive_bytes(socket, bytes):
-
-
 def send_to_server(socket, commands):
 
   if len(commands) == 0:
@@ -117,8 +101,6 @@ else:
 
 socket = get_socket()
 send_to_server(socket, commands)
-
-print('Sending is voer')
 
 recevied_data = get_data(socket)
 
