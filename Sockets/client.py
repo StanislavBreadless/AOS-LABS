@@ -1,16 +1,128 @@
-# Import socket module 
+# # Import socket module 
 import socket                
+from datetime import datetime
+
+PORT = 1025 + 3
+FILE_MODE = '1'
+PROMRT_MODE = '2'
+LOG_FILE = 'client-log.log'
+
+
+def get_socket():
+  s = socket.socket()
+  s.connect(('127.0.0.1', PORT))
   
-# Create a socket object 
-s = socket.socket()          
+  return s
+
+def get_mode():
+  while True:
+    print('Choose mode: file(%s) or prompt(%s)' % (FILE_MODE, PROMRT_MODE))
+    mode = input()
+
+    if mode != FILE_MODE and mode != PROMRT_MODE:
+      print('You should enter either 1 or 2!')
+    else:
+      return mode
+
+
+def log_data(data, recv):
+  log_file = open(LOG_FILE, 'a+')
+
+  now = datetime.now()
+  current_time = now.strftime("%H:%M:%S")
+
+  info_str = ''
+
+  if recv:
+    info_str = 'Recevied from server at %s:\n' % (current_time)
+  else:
+    info_str = 'Sent to server at %s:\n' % (current_time)
+
+  log_file.write(info_str)
+  log_file.write(data)
+  # A little piece of beauty😊
+  log_file.write('\n------------------------\n')
+
+  log_file.close()
+
+def get_commands_from_file():
+  print('Please, enter path to the file:')
+  file_path = input()
+  f = open(file_path, 'r')
+  return f.readlines()
+
+def get_commands_from_prompt():
+  print('Enter your commands, one per line.')
+  print('When you are done, enter "exit" (without quotes).')
+
+  commands = []
+
+  while True:
+    command = input()
+    if command == 'exit':
+      break
+    else:
+      commands.append(command)
   
-# Define the port on which you want to connect 
-port = 12345                
+  return commands
+
+# def chunks(lst, n):
+#   for i in range(0, len(lst), n):
+#     if i + n >= len(lst):
+#       yield[i:len(lst)]
+#     else:
+#       yield lst[i:i + n]  
+
+# def send_bytes(socket, bytes):
+#   for chunk in chunks(bytes, 255):
+#     length = len(chunk)
+#     socket.sendall([length.to_bytes(1, 'big')] + chunk)
+#   socket.sendall((0).to_bytes(1, 'big'))
+
+# def receive_bytes(socket, bytes):
+
+
+def send_to_server(socket, commands):
+
+  if len(commands) == 0:
+    commands.append('\nexit')
+  else:
+    commands.append('exit')
+
+  data = '\n'.join(commands) + '\n'
+
+  socket.sendall(data.encode('ascii', errors='strict'))
   
-# connect to the server on local computer 
-s.connect(('127.0.0.1', port)) 
+  log_data(data, recv=False)
+
+def get_data(socket):
+  data_str = '' 
+  while True:
+    packet = socket.recv(1024)
+    if not packet:
+      break
+    data_str += packet.decode('ascii')
   
-# receive data from the server 
-print (s.recv(1024)) 
-# close the connection 
-s.close()
+  return data_str
+
+
+mode = get_mode()
+
+commands = ''
+
+if mode == FILE_MODE:
+  commands = get_commands_from_file()
+else:
+  commands = get_commands_from_prompt()
+
+socket = get_socket()
+send_to_server(socket, commands)
+
+print('Sending is voer')
+
+recevied_data = get_data(socket)
+
+log_data(recevied_data, recv=True)
+
+
+
