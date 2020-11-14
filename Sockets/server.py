@@ -1,5 +1,7 @@
 import socket                
 import os
+import logging
+import sys
 from datetime import datetime
 
 LOG_FILE = 'server-log.log'
@@ -9,18 +11,18 @@ EXIT_MARKER = '\nexit\n'
 EXIT_MARKER_LEN = len(EXIT_MARKER)
 PORT = 1025 + 3
 
+logging.basicConfig(filename=LOG_FILE, encoding='ascii', level=logging.INFO)
+
 s = socket.socket()          
 print ("Socket successfully created")
 
 s.bind(('', PORT))         
-print ("socket binded to %s", PORT)
+print ("socket binded to", PORT)
 
 s.listen(5)      
 print("socket is listening") 
 
 def log_data(data, addr, recv):
-  log_file = open(LOG_FILE, 'a+')
-
   now = datetime.now()
   current_time = now.strftime("%H:%M:%S")
 
@@ -32,12 +34,11 @@ def log_data(data, addr, recv):
     info_str = 'Sent to %s at %s:\n' % (addr, current_time)
 
 
-  log_file.write(info_str)
-  log_file.write(data)
+  info_str = info_str = '\n' + data
   # A little piece of beauty😊
-  log_file.write('\n------------------------\n')
+  info_str = info_str + '\n------------------------\n'
 
-  log_file.close()
+  logging.info(info_str)
 
 def exit_marker_found(data_str):
   data_len = len(data_str)
@@ -47,9 +48,7 @@ def exit_marker_found(data_str):
 def get_data(client):
   data_str = '' 
   while True:
-    print('Cycle going....')
     packet = client.recv(1024)
-    print(not packet)
     if not packet:
       break
     data_str += packet.decode('ascii')
@@ -78,15 +77,23 @@ def exec_commands(commands_str):
 
 while True: 
   
-   # Establish connection with client. 
-   client, addr = s.accept()      
-   print ('Got connection from', addr)
+  try: 
+    # Establish connection with client. 
+    client, addr = s.accept()      
+    print ('Got connection from', addr)
 
-   data = get_data(client)
-   log_data(data, addr, recv=True)
+    data = get_data(client)
+    log_data(data, addr, recv=True)
 
-   executed_data = exec_commands(data)
-   log_data(executed_data, addr, recv=False)
+    executed_data = exec_commands(data)
+    log_data(executed_data, addr, recv=False)
 
-   sent_bytes = client.sendall(executed_data.encode('ascii'))
-   client.close() 
+    sent_bytes = client.sendall(executed_data.encode('ascii'))
+    client.close() 
+  except OSError as err:
+    logging.error('OS Error: {0}'.format(err))
+  except IOError as err:
+    logging.error("I/O error({0}): {1}".format(err))
+  except: 
+    logging.error("Unexpected error:", sys.exc_info()[0])
+    raise

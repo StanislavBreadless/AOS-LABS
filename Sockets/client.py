@@ -1,5 +1,7 @@
 # # Import socket module 
-import socket                
+import socket            
+import logging   
+import sys
 from datetime import datetime
 
 PORT = 1025 + 3
@@ -7,6 +9,7 @@ FILE_MODE = '1'
 PROMRT_MODE = '2'
 LOG_FILE = 'client-log.log'
 
+logging.basicConfig(filename=LOG_FILE, encoding='ascii', level=logging.INFO)
 
 def get_socket():
   s = socket.socket()
@@ -26,8 +29,6 @@ def get_mode():
 
 
 def log_data(data, recv):
-  log_file = open(LOG_FILE, 'a+')
-
   now = datetime.now()
   current_time = now.strftime("%H:%M:%S")
 
@@ -38,12 +39,13 @@ def log_data(data, recv):
   else:
     info_str = 'Sent to server at %s:\n' % (current_time)
 
-  log_file.write(info_str)
-  log_file.write(data)
+  info_str = info_str + '\n'
+  info_str = info_str + data
+  
   # A little piece of beauty😊
-  log_file.write('\n------------------------\n')
+  info_str = info_str + '\n------------------------\n'
 
-  log_file.close()
+  logging.info(info_str)
 
 def get_commands_from_file():
   print('Please, enter path to the file:')
@@ -99,12 +101,18 @@ if mode == FILE_MODE:
 else:
   commands = get_commands_from_prompt()
 
-socket = get_socket()
-send_to_server(socket, commands)
-
-recevied_data = get_data(socket)
-
-log_data(recevied_data, recv=True)
+try:
+  socket = get_socket()
+  send_to_server(socket, commands)
+  recevied_data = get_data(socket)
+  log_data(recevied_data, recv=True)
+except OSError as err:
+  logging.error('OS Error: {0}'.format(err))
+except IOError as err:
+  logging.error("I/O error({0}): {1}".format(err))
+except: 
+  logging.error("Unexpected error:", sys.exc_info()[0])
+  raise
 
 
 
